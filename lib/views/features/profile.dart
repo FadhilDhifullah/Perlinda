@@ -28,7 +28,10 @@ class _ProfileState extends State<Profile> {
 
   Future<void> _fetchUserData() async {
     if (user != null) {
-      final userData = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
       if (userData.exists) {
         setState(() {
           _fullName = userData['full_name'];
@@ -92,22 +95,35 @@ class _ProfileState extends State<Profile> {
                     SizedBox(height: 12.0),
                     Text(
                       _fullName,
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18),
                     ),
                     SizedBox(height: 20.0),
                     ElevatedButton(
                       onPressed: () {
                         // Navigate to UbahProfile page
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => UbahProfile()));
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => UbahProfile()));
                       },
                       style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Sesuaikan radius
-                        backgroundColor: Color(0xFF00355C), // Sesuaikan warna latar belakang
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(8)), // Sesuaikan radius
+                        backgroundColor:
+                            Color(0xFF00355C), // Sesuaikan warna latar belakang
                         fixedSize: Size(224, 55), // Sesuaikan lebar dan tinggi
                       ),
                       child: Text(
                         'Ubah Profil',
-                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold), // Sesuaikan ukuran teks
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight:
+                                FontWeight.bold), // Sesuaikan ukuran teks
                       ),
                     ),
                   ],
@@ -123,15 +139,19 @@ class _ProfileState extends State<Profile> {
                 GestureDetector(
                   onTap: () {
                     // Navigate to DataDiri page
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => DataDiri()));
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => DataDiri()));
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.person, color: Colors.black), // Tambahkan ikon di samping kiri teks
+                      Icon(Icons.person,
+                          color: Colors
+                              .black), // Tambahkan ikon di samping kiri teks
                       SizedBox(width: 8), // Berikan jarak antara ikon dan teks
                       Text(
                         'Data Diri',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -140,15 +160,21 @@ class _ProfileState extends State<Profile> {
                 GestureDetector(
                   onTap: () {
                     // Navigate to DukunganBantuan page
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => BantuanDukungan()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BantuanDukungan()));
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.help, color: Colors.black), // Tambahkan ikon di samping kiri teks
+                      Icon(Icons.help,
+                          color: Colors
+                              .black), // Tambahkan ikon di samping kiri teks
                       SizedBox(width: 8), // Berikan jarak antara ikon dan teks
                       Text(
                         'Bantuan & Dukungan',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -157,15 +183,21 @@ class _ProfileState extends State<Profile> {
                 GestureDetector(
                   onTap: () {
                     // Navigate to LandingPage
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LandingPage()));
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (context) => LandingPage()));
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.logout, color: Colors.red), // Tambahkan ikon di samping kiri teks
+                      Icon(Icons.logout,
+                          color: Colors
+                              .red), // Tambahkan ikon di samping kiri teks
                       SizedBox(width: 8), // Berikan jarak antara ikon dan teks
                       Text(
                         'Keluar',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.red), // Sesuaikan warna teks
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red), // Sesuaikan warna teks
                       ),
                     ],
                   ),
@@ -196,7 +228,8 @@ class _ProfileState extends State<Profile> {
             _selectedIndex = index;
             if (_selectedIndex == 0) {
               // Navigasi ke halaman Home
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (context) => HomePage()));
             }
           });
         },

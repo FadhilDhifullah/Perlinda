@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 class CallScreen extends StatefulWidget {
+  final String title;
+  final String contactName;
+  final String phoneNumber;
+
+  CallScreen({
+    required this.title,
+    required this.contactName,
+    required this.phoneNumber,
+  });
+
   @override
   _CallScreenState createState() => _CallScreenState();
 }
@@ -14,6 +25,7 @@ class _CallScreenState extends State<CallScreen> {
   void initState() {
     super.initState();
     _startTimer();
+    _makePhoneCall(widget.phoneNumber);
   }
 
   void _startTimer() {
@@ -36,6 +48,14 @@ class _CallScreenState extends State<CallScreen> {
     return '$minutes : $remainingSeconds';
   }
 
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    await launchUrl(launchUri);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,7 +70,7 @@ class _CallScreenState extends State<CallScreen> {
             Expanded(
               child: Center(
                 child: Text(
-                  "Telepon Darurat Polisi",
+                  widget.title,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -79,7 +99,7 @@ class _CallScreenState extends State<CallScreen> {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      'POLSEK Sumbersari - Jember',
+                      widget.contactName,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -112,7 +132,7 @@ class _CallScreenState extends State<CallScreen> {
                   IconButton(
                     icon: Icon(Icons.call_end, color: Colors.red, size: 50),
                     onPressed: () {
-                      // End call action
+                      Navigator.pop(context);
                     },
                   ),
                   SizedBox(width: 50),

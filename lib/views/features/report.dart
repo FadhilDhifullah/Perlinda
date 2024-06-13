@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_perlinda/services/report_service.dart';
 
 class BuatLaporan extends StatefulWidget {
   @override
@@ -13,6 +14,8 @@ class _BuatLaporanState extends State<BuatLaporan> {
   final TextEditingController _isiController = TextEditingController();
   DateTime? _selectedDate;
   bool _isChecked = false;
+  final FirestoreService _firestoreService =
+      FirestoreService(); // Instantiate Firestore service
 
   void _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -26,6 +29,40 @@ class _BuatLaporanState extends State<BuatLaporan> {
         _selectedDate = picked;
       });
     }
+  }
+
+  void _submitReport() async {
+    if (_judulController.text.isEmpty ||
+        _isiController.text.isEmpty ||
+        _selectedDate == null) {
+      // Display an error if any required field is empty
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    // Submit the report to Firestore
+    await _firestoreService.addReport(
+      title: _judulController.text,
+      content: _isiController.text,
+      date: _selectedDate!,
+      location: 'Location Placeholder', // Replace with actual location logic
+      isAnonymous: _isChecked,
+    );
+
+    // Clear the form fields
+    _judulController.clear();
+    _isiController.clear();
+    setState(() {
+      _selectedDate = null;
+      _isChecked = false;
+    });
+
+    // Display success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Report submitted successfully')),
+    );
   }
 
   @override
@@ -52,9 +89,7 @@ class _BuatLaporanState extends State<BuatLaporan> {
                 ),
               ),
             ),
-            SizedBox(
-                width:
-                    48), // Untuk menyeimbangkan ruang yang diambil oleh IconButton
+            SizedBox(width: 48),
           ],
         ),
       ),
@@ -212,11 +247,10 @@ class _BuatLaporanState extends State<BuatLaporan> {
             Row(
               children: <Widget>[
                 Checkbox(
-                  value: _isChecked, // Gunakan variabel status
+                  value: _isChecked,
                   onChanged: (bool? value) {
                     setState(() {
-                      _isChecked = value ??
-                          false; // Perbarui status saat checkbox diklik
+                      _isChecked = value ?? false;
                     });
                   },
                 ),
@@ -229,7 +263,7 @@ class _BuatLaporanState extends State<BuatLaporan> {
             SizedBox(height: 16.0),
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _submitReport, // Submit report on button press
                 child: Text(
                   "Buat Laporan",
                   style: TextStyle(
@@ -242,10 +276,10 @@ class _BuatLaporanState extends State<BuatLaporan> {
                   foregroundColor: Colors.white,
                   padding:
                       EdgeInsets.symmetric(horizontal: 100.0, vertical: 15.0),
-                  textStyle: TextStyle(
-                      fontSize: 18.0, fontWeight: FontWeight.bold), // Teks bold
+                  textStyle:
+                      TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0), // Border radius 8
+                    borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
               ),

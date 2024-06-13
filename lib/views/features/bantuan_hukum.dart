@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_perlinda/services/chat_service.dart';
+import 'package:flutter_perlinda/views/features/detail_advokat.dart'; // Sesuaikan dengan path yang benar
 
 class BantuanHukumPage extends StatelessWidget {
   @override
@@ -9,7 +11,7 @@ class BantuanHukumPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Color(0xFF4682A9),
         elevation: 0,
-        centerTitle: true, // Center the title
+        centerTitle: true,
         title: Text(
           'Bantuan Hukum',
           style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
@@ -51,32 +53,21 @@ class BantuanHukumPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16.0),
-            TextField(
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
-                ),
-                labelText: 'Cari nama advokat',
-                labelStyle: GoogleFonts.poppins(), // Apply Poppins font
-                prefixIcon: Icon(Icons.search),
-              ),
-            ),
+            SearchBar(),
             SizedBox(height: 16.0),
             Expanded(
               child: ListView(
                 children: [
-                  _buildAdvocateCard(
-                    'Gojo Sitorus, M.H',
-                    'Advokat',
-                    'images/foto_gojo.png',
+                  LawyerCard(
+                    imagePath: 'images/foto_gojo.png',
+                    name: 'Gojo Sitorus, M.H',
+                    phoneNumber: '0859191735426', // Nomor WhatsApp pertama
                   ),
-                  _buildAdvocateCard(
-                    'Fuad Rusdi, S.H',
-                    'Advokat',
-                    'images/foto_fuad.png',
+                  SizedBox(height: 16),
+                  LawyerCard(
+                    imagePath: 'images/foto_fuad.png',
+                    name: 'Fuad Rusdi, S.H',
+                    phoneNumber: '082140830811', // Nomor WhatsApp kedua
                   ),
                 ],
               ),
@@ -86,74 +77,123 @@ class BantuanHukumPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildAdvocateCard(String name, String title, String imagePath) {
-    return Card(
-      color: Colors.white, // Set background color to white
-      margin: EdgeInsets.symmetric(vertical: 8.0), // Add margin between cards
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: Colors.black), // Set border color to black
+class SearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Cari nama advokat',
+        filled: true,
+        fillColor: Colors.white,
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.black),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.black),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
+    );
+  }
+}
+
+class LawyerCard extends StatelessWidget {
+  final String imagePath;
+  final String name;
+  final String phoneNumber;
+  final ChatService _chatService = ChatService();
+
+  LawyerCard(
+      {required this.imagePath, required this.name, required this.phoneNumber});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 375,
+      height: 205,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => DetailAdvokat()),
+              );
+            },
+            child: Row(
               children: [
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: AssetImage(imagePath),
                 ),
-                SizedBox(width: 16.0),
+                SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       name,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16.0,
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 4.0),
-                    Text(
-                      title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.0,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text('Advokat'),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 8.0),
-            Container(
-              height: 1.0,
-              width: double.infinity, // Make the line take full width
-              color: Colors.black,
-            ),
-            SizedBox(height: 8.0),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
+          ),
+          SizedBox(height: 16),
+          Divider(
+            color: Colors.black,
+            thickness: 1,
+          ),
+          Spacer(),
+          Row(
+            children: [
+              Spacer(),
+              ElevatedButton(
                 onPressed: () {
-                  // Handle chat action
+                  _chatService.openWhatsAppChat(phoneNumber);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF4682A9), // Button color
-                ),
                 child: Text(
                   'Chat Sekarang',
-                  style: GoogleFonts.poppins(
-                      color: Colors.white), // Apply Poppins font
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4682A9),
+                  fixedSize: Size(160, 49),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
