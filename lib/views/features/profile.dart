@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_perlinda/services/auth_service.dart';
+import 'package:flutter_perlinda/services/user_service.dart';
 import 'package:flutter_perlinda/views/features/bantuan_dukungan.dart';
 import '../home_page.dart';
 import '../auth/ubah_profile.dart'; // Import UbahProfile page
@@ -16,7 +16,8 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   int _selectedIndex = 1; // Index of the selected item
-  final User? user = FirebaseAuth.instance.currentUser;
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
   String _fullName = '';
   String? _profilePictureUrl;
 
@@ -27,18 +28,21 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _fetchUserData() async {
-    if (user != null) {
-      final userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .get();
-      if (userData.exists) {
-        setState(() {
-          _fullName = userData['full_name'];
-          _profilePictureUrl = userData['profile_picture'];
-        });
-      }
+    final userData = await _userService.getUserData();
+    if (userData != null) {
+      setState(() {
+        _fullName = userData['full_name'];
+        _profilePictureUrl = userData['profile_picture'];
+      });
     }
+  }
+
+  Future<void> _signOut() async {
+    await _authService.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LandingPage()),
+    );
   }
 
   @override
@@ -181,10 +185,8 @@ class _ProfileState extends State<Profile> {
                 ),
                 const SizedBox(height: 10.0),
                 GestureDetector(
-                  onTap: () {
-                    // Navigate to LandingPage
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => LandingPage()));
+                  onTap: () async {
+                    await _signOut(); // Call the signOut function
                   },
                   child: Row(
                     children: [

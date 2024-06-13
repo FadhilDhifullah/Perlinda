@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 
 class DetailRiwayatLaporan extends StatelessWidget {
+  final String reportId;
+  final Map<String, dynamic> reportData;
+
+  DetailRiwayatLaporan({
+    required this.reportId,
+    required this.reportData,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +50,7 @@ class DetailRiwayatLaporan extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Container(
-              padding: EdgeInsets.all(70.0),
+              padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Color(0xFFC1D9F1),
                 borderRadius: BorderRadius.circular(8),
@@ -55,7 +63,7 @@ class DetailRiwayatLaporan extends StatelessWidget {
                     style: TextStyle(fontSize: 18, color: Color(0xFF00355C)),
                   ),
                   Text(
-                    '44621',
+                    reportId,
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -63,7 +71,7 @@ class DetailRiwayatLaporan extends StatelessWidget {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Kekerasan dalam rumah tangga',
+                    reportData['title'] ?? 'Tidak ada judul',
                     style: TextStyle(fontSize: 16, color: Color(0xFF00355C)),
                   ),
                 ],
@@ -80,19 +88,15 @@ class DetailRiwayatLaporan extends StatelessWidget {
             SizedBox(height: 10),
             Expanded(
               child: ListView(
-                children: [
-                  _buildStatusTile('23-04-2024 20:23', 'Laporan terkirim'),
-                  _buildStatusTile('23-04-2024 20:23', 'Sedang diverifikasi'),
-                  _buildStatusTile('24-04-2024 20:23', 'Melakukan Pemeriksaan'),
-                  _buildStatusTile('24-04-2024 20:23', 'Melakukan Penindakan'),
-                  _buildStatusTile('25-04-2024 20:23', 'Pemulihan'),
-                ],
+                children: _buildStatusTiles(reportData['statusHistory'] ?? []),
               ),
             ),
             SizedBox(height: 10),
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Action for the button can be implemented here
+                },
                 child: Text(
                   "Refresh",
                   style: TextStyle(
@@ -105,10 +109,10 @@ class DetailRiwayatLaporan extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding:
                       EdgeInsets.symmetric(horizontal: 100.0, vertical: 15.0),
-                  textStyle: TextStyle(
-                      fontSize: 18.0, fontWeight: FontWeight.bold), // Teks bold
+                  textStyle:
+                      TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0), // Border radius 8
+                    borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
               ),
@@ -117,6 +121,15 @@ class DetailRiwayatLaporan extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildStatusTiles(List<dynamic> statusHistory) {
+    return statusHistory.map((status) {
+      return _buildStatusTile(
+        status['date'] ?? 'Unknown date',
+        status['status'] ?? 'Unknown status',
+      );
+    }).toList();
   }
 }
 

@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_perlinda/services/report_service.dart';
+import 'package:flutter_perlinda/services/storage_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BuatLaporan extends StatefulWidget {
   @override
@@ -14,8 +18,13 @@ class _BuatLaporanState extends State<BuatLaporan> {
   final TextEditingController _isiController = TextEditingController();
   DateTime? _selectedDate;
   bool _isChecked = false;
-  final FirestoreService _firestoreService =
-      FirestoreService(); // Instantiate Firestore service
+  File? _selectedFile;
+  String? _fileUrl;
+  LatLng? _selectedLocation;
+
+  final FirestoreService _firestoreService = FirestoreService();
+  final StorageService _storageService = StorageService();
+  final ImagePicker _picker = ImagePicker();
 
   void _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -31,35 +40,56 @@ class _BuatLaporanState extends State<BuatLaporan> {
     }
   }
 
-  void _submitReport() async {
+  void _pickFile() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _submitReport() async {
+    User? user = FirebaseAuth.instance.currentUser;
+
     if (_judulController.text.isEmpty ||
         _isiController.text.isEmpty ||
-        _selectedDate == null) {
-      // Display an error if any required field is empty
+        _selectedDate == null ||
+        _selectedLocation == null ||
+        user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
       return;
     }
 
-    // Submit the report to Firestore
+    if (_selectedFile != null) {
+      _fileUrl = await _storageService.uploadFile(_selectedFile!,
+          'reports/${DateTime.now().millisecondsSinceEpoch}.jpg');
+    }
+
     await _firestoreService.addReport(
+      userId: user.uid,
       title: _judulController.text,
       content: _isiController.text,
       date: _selectedDate!,
-      location: 'Location Placeholder', // Replace with actual location logic
+      location:
+          'Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}',
       isAnonymous: _isChecked,
+      attachmentUrl: _fileUrl,
     );
 
-    // Clear the form fields
     _judulController.clear();
     _isiController.clear();
     setState(() {
       _selectedDate = null;
       _isChecked = false;
+      _selectedFile = null;
+      _fileUrl = null;
+      _selectedLocation = null;
     });
 
-    // Display success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Report submitted successfully')),
     );
@@ -189,6 +219,11 @@ class _BuatLaporanState extends State<BuatLaporan> {
                 options: MapOptions(
                   center: LatLng(-6.200000, 106.816666),
                   zoom: 13.0,
+                  onTap: (tapPosition, point) {
+                    setState(() {
+                      _selectedLocation = point;
+                    });
+                  },
                 ),
                 children: [
                   TileLayer(
@@ -196,6 +231,23 @@ class _BuatLaporanState extends State<BuatLaporan> {
                         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                     subdomains: ['a', 'b', 'c'],
                   ),
+                  if (_selectedLocation != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: 80.0,
+                          height: 80.0,
+                          point: _selectedLocation!,
+                          builder: (ctx) => Container(
+                            child: Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                              size: 40.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -213,74 +265,72 @@ class _BuatLaporanState extends State<BuatLaporan> {
                 ),
                 Text(
                   "*Dapat berisi foto/bukti pendukung",
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    color: Color(0xFF00355C),
-                  ),
+                  style: TextStyle(fontSize: 12.0, color: Color(0xFF00355C)),
                 ),
               ],
             ),
             SizedBox(height: 8.0),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0),
-                backgroundColor: Color(0xFFC1D9F1),
-                shape: RoundedRectangleBorder(
+            GestureDetector(
+              onTap: _pickFile,
+              child: Container(
+                width: width - 32,
+                height: 150.0,
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8.0),
-                  side: BorderSide(color: Colors.grey),
+                  color: Color(0xFFC1D9F1),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(Icons.attach_file, color: Color(0xFF00355C)),
-                  SizedBox(width: 8.0),
-                  Text(
-                    "Upload Lampiran",
-                    style: TextStyle(color: Color(0xFF00355C)),
-                  ),
-                ],
+                child: _selectedFile != null
+                    ? Image.file(
+                        _selectedFile!,
+                        fit: BoxFit.cover,
+                      )
+                    : Center(
+                        child: Text(
+                          'Pilih File',
+                          style: TextStyle(
+                            color: Color(0xFF00355C),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
               ),
             ),
             SizedBox(height: 16.0),
             Row(
-              children: <Widget>[
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Laporan Anonim",
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00355C),
+                  ),
+                ),
                 Checkbox(
                   value: _isChecked,
                   onChanged: (bool? value) {
                     setState(() {
-                      _isChecked = value ?? false;
+                      _isChecked = value!;
                     });
                   },
-                ),
-                Text(
-                  "Anonim",
-                  style: TextStyle(color: Color(0xFF00355C)),
                 ),
               ],
             ),
             SizedBox(height: 16.0),
             Center(
               child: ElevatedButton(
-                onPressed: _submitReport, // Submit report on button press
-                child: Text(
-                  "Buat Laporan",
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                onPressed: _submitReport,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF4682A9),
-                  foregroundColor: Colors.white,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 100.0, vertical: 15.0),
-                  textStyle:
-                      TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 32.0,
                   ),
+                ),
+                child: Text(
+                  "Kirim Laporan",
+                  style: TextStyle(fontSize: 18.0),
                 ),
               ),
             ),
