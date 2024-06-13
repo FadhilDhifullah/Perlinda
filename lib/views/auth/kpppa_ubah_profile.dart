@@ -1,7 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class KPPPAUbahProfile extends StatefulWidget {
   const KPPPAUbahProfile({Key? key}) : super(key: key);
@@ -17,15 +19,34 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _alamatController = TextEditingController();
   TextEditingController _noHandphoneController = TextEditingController();
+  String? _userId;
 
-  @override 
+  @override
   void initState() {
-    _namaController.text = 'Meilin Ayu Sari';
-    _emailController.text = 'meilinayusari48@gmail.com';
-    _passwordController.text = '********';
-    _alamatController.text = 'Jl. Brawijaya No. 3 Kaliwates, Jember';
-    _noHandphoneController.text = '+6282142856282';
     super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _userId = user.uid;
+      });
+
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('kpppa')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          _namaController.text = userDoc['full_name'];
+          _emailController.text = userDoc['email'];
+          _alamatController.text = userDoc['address'];
+          _noHandphoneController.text = userDoc['phone'];
+        });
+      }
+    }
   }
 
   Future<void> _getImage() async {
@@ -39,6 +60,41 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
         _image = File(result.files.single.path!);
       });
     }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_userId == null) return;
+
+    String? imageUrl;
+    if (_image != null) {
+      UploadTask uploadTask = FirebaseStorage.instance
+          .ref('profile_images/$_userId.jpg')
+          .putFile(_image!);
+      TaskSnapshot snapshot = await uploadTask;
+      imageUrl = await snapshot.ref.getDownloadURL();
+    }
+
+    await FirebaseFirestore.instance.collection('kpppa').doc(_userId).update({
+      'full_name': _namaController.text,
+      'email': _emailController.text,
+      'address': _alamatController.text,
+      'phone': _noHandphoneController.text,
+      if (imageUrl != null) 'profile_image': imageUrl,
+    });
+
+    // Optionally, update the email and password in FirebaseAuth
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      if (_emailController.text != user.email) {
+        await user.updateEmail(_emailController.text);
+      }
+      if (_passwordController.text.isNotEmpty) {
+        await user.updatePassword(_passwordController.text);
+      }
+    }
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Profile updated successfully')));
   }
 
   @override
@@ -141,9 +197,7 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
                 width: double.infinity,
                 height: 55.0,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Tambahkan logika penyimpanan perubahan di sini
-                  },
+                  onPressed: _saveChanges,
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
                         Color(0xFF4682A9)), // Ubah warna latar belakang
