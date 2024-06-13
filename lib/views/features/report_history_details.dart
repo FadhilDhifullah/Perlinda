@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_perlinda/services/report_history_service.dart';
 
 class DetailRiwayatLaporan extends StatelessWidget {
   final String reportId;
-  final Map<String, dynamic> reportData;
 
   DetailRiwayatLaporan({
     required this.reportId,
-    required this.reportData,
   });
 
   @override
@@ -36,89 +35,106 @@ class DetailRiwayatLaporan extends StatelessWidget {
           ],
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Detail Laporan',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00355C)),
-            ),
-            SizedBox(height: 10),
-            Container(
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Color(0xFFC1D9F1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Id Laporan',
-                    style: TextStyle(fontSize: 18, color: Color(0xFF00355C)),
-                  ),
-                  Text(
-                    reportId,
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF00355C)),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    reportData['title'] ?? 'Tidak ada judul',
-                    style: TextStyle(fontSize: 16, color: Color(0xFF00355C)),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Riwayat Status Laporan',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00355C)),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView(
-                children: _buildStatusTiles(reportData['statusHistory'] ?? []),
-              ),
-            ),
-            SizedBox(height: 10),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Action for the button can be implemented here
-                },
-                child: Text(
-                  "Refresh",
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: ReportHistoryService().getReportById(reportId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.hasError) {
+            return Center(child: Text('Error loading report data'));
+          }
+
+          Map<String, dynamic> reportData = snapshot.data!;
+          return Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Detail Laporan',
                   style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00355C)),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFC1D9F1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Id Laporan',
+                        style:
+                            TextStyle(fontSize: 18, color: Color(0xFF00355C)),
+                      ),
+                      Text(
+                        reportId,
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF00355C)),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        reportData['title'] ?? 'Tidak ada judul',
+                        style:
+                            TextStyle(fontSize: 16, color: Color(0xFF00355C)),
+                      ),
+                    ],
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF4682A9),
-                  foregroundColor: Colors.white,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 100.0, vertical: 15.0),
-                  textStyle:
-                      TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                SizedBox(height: 20),
+                Text(
+                  'Riwayat Status Laporan',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00355C)),
+                ),
+                SizedBox(height: 10),
+                Expanded(
+                  child: ListView(
+                    children:
+                        _buildStatusTiles(reportData['statusHistory'] ?? []),
                   ),
                 ),
-              ),
+                SizedBox(height: 10),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Action for the button can be implemented here
+                    },
+                    child: Text(
+                      "Refresh",
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4682A9),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 100.0, vertical: 15.0),
+                      textStyle: TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

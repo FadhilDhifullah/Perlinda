@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_perlinda/views/features/kpppa_profile.dart';
 import 'package:flutter_perlinda/views/features/kpppa_daftar_laporan.dart';
 import 'package:flutter_perlinda/views/features/kpppa_riwayat_laporan.dart';
+import 'package:flutter_perlinda/services/login_kpppa_service.dart';
 
 class KPPPAHomePage extends StatefulWidget {
   const KPPPAHomePage({Key? key}) : super(key: key);
@@ -12,6 +14,33 @@ class KPPPAHomePage extends StatefulWidget {
 
 class _KPPPAHomePageState extends State<KPPPAHomePage> {
   int _selectedIndex = 0; // Index of the selected item
+  String _fullName = 'User'; // Default user name
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserFullName();
+  }
+
+  Future<void> _loadUserFullName() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String userId = user.uid;
+        String fullName = await LoginKPPPAService().getFullName(userId);
+        setState(() {
+          _fullName = fullName;
+        });
+      }
+    } catch (e) {
+      // Handle error if any
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load user name: ${e.toString()}'),
+        ),
+      );
+    }
+  }
 
   final List<String> titles = [
     'Lihat Laporan',
@@ -92,7 +121,7 @@ class _KPPPAHomePageState extends State<KPPPAHomePage> {
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                'Semoga harimu baik, Meilin!',
+                'Selamat Datang, $_fullName!',
                 style: TextStyle(
                   color: Color(0xFF00355C),
                   fontSize: 16.0,

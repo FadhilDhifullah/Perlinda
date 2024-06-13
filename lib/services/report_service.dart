@@ -20,8 +20,15 @@ class FirestoreService {
       'location': location,
       'isAnonymous': isAnonymous,
       'attachmentUrl': attachmentUrl,
+      'status': 'laporan terkirim',
+      'statusHistory': [
+        {'date': DateTime.now().toIso8601String(), 'status': 'laporan terkirim'}
+      ], // Menambahkan status riwayat
     });
   }
 
-  // Methods for retrieving reports would go here
+  Future<Map<String, dynamic>> getReportById(String reportId) async {
+    DocumentSnapshot doc = await _db.collection('reports').doc(reportId).get();
+    return doc.data() as Map<String, dynamic>;
+  }
 }

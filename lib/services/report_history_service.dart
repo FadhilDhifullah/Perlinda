@@ -23,4 +23,9 @@ class ReportHistoryService {
       }).toList();
     });
   }
+
+  Future<Map<String, dynamic>> getReportById(String reportId) async {
+    DocumentSnapshot doc = await _db.collection('reports').doc(reportId).get();
+    return doc.data() as Map<String, dynamic>;
+  }
 }

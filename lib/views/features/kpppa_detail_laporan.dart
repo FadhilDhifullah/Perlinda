@@ -1,15 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 
 class KPPPADetailLaporan extends StatefulWidget {
+  final Map<String, dynamic> report;
+
+  KPPPADetailLaporan({required this.report});
+
   @override
   _KPPPADetailLaporanState createState() => _KPPPADetailLaporanState();
 }
 
 class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
-  String? _selectedStatus = 'Sedang diverifikasi'; // Initial selected value
+  String? _selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.report['status'] ?? 'Sedang diverifikasi';
+
+    // Pastikan _selectedStatus adalah salah satu dari nilai yang tersedia
+    final validStatuses = [
+      'Laporan diterima',
+      'Sedang diverifikasi',
+      'Bantuan awal',
+      'Proses hukum',
+      'Kasus selesai'
+    ];
+    if (!validStatuses.contains(_selectedStatus)) {
+      _selectedStatus = 'Sedang diverifikasi';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final report = widget.report;
+    final Timestamp timestamp = report['date'];
+    final date = timestamp.toDate();
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4682A9),
@@ -31,16 +60,13 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            buildDetailItem(context, 'Nama Pelapor', 'Linda Permatasari',
-                isLink: true),
-            buildDetailItem(
-                context, 'Judul Laporan', 'Kekerasan dalam rumah tangga'),
-            buildDetailItem(context, 'Isi Laporan',
-                'Saya mengalami kekerasan dalam rumah tangga yang dilakukan oleh suami saya. Kejadian ini terjadi di rumah kami. Saya dipukul dan ditendang hingga mengalami luka-luka di beberapa bagian tubuh.'),
-            buildDetailItem(context, 'Tanggal Kejadian', '23-04-2024',
-                isDate: true),
+            buildDetailItem(context, 'Nama Pelapor', report['reporterName']),
+            buildDetailItem(context, 'Judul Laporan', report['title']),
+            buildDetailItem(context, 'Isi Laporan', report['content']),
+            buildDetailItem(context, 'Tanggal Kejadian', formattedDate),
             buildLocationDetailItem('Lokasi Kejadian'),
-            buildDetailItem(context, 'Lampiran', 'buktivisum.jpg',
+            buildDetailItem(context, 'Lampiran',
+                report['attachmentUrl'] ?? 'No attachment available',
                 isFile: true),
             buildStatusDropdown(),
             SizedBox(height: 20.0),
@@ -48,6 +74,7 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
               child: ElevatedButton(
                 onPressed: () {
                   // Add save functionality here
+                  // You can add code to save the status to Firestore or any other database
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
@@ -142,10 +169,8 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
                                 value,
                                 style: TextStyle(color: Color(0xFF00355C)),
                               ),
-                              Icon(
-                                Icons.file_present,
-                                color: Color(0xFF00355C),
-                              ),
+                              Icon(Icons.file_present,
+                                  color: Color(0xFF00355C)),
                             ],
                           )
                         : Text(
@@ -321,5 +346,13 @@ class DataPelapor extends StatelessWidget {
 }
 
 void main() => runApp(MaterialApp(
-      home: KPPPADetailLaporan(),
+      home: KPPPADetailLaporan(report: {
+        'reporterName': 'Linda Permatasari',
+        'title': 'Kekerasan dalam rumah tangga',
+        'content':
+            'Saya mengalami kekerasan dalam rumah tangga yang dilakukan oleh suami saya. Kejadian ini terjadi di rumah kami. Saya dipukul dan ditendang hingga mengalami luka-luka di beberapa bagian tubuh.',
+        'date': Timestamp.fromDate(DateTime(2024, 4, 23)), // Use Timestamp here
+        'attachmentUrl': 'buktivisum.jpg',
+        'status': 'Sedang diverifikasi',
+      }),
     ));
