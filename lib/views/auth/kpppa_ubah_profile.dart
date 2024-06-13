@@ -37,7 +37,10 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
       });
 
       // Fetch the data from the kpppa collection
-      DocumentSnapshot kpppaDoc = await FirebaseFirestore.instance.collection('kpppa').doc(user.uid).get();
+      DocumentSnapshot kpppaDoc = await FirebaseFirestore.instance
+          .collection('kpppa')
+          .doc(user.uid)
+          .get();
       if (kpppaDoc.exists) {
         setState(() {
           _namaController.text = kpppaDoc['full_name'] ?? '';
@@ -94,14 +97,22 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
       'address': _alamatController.text,
       'phone': _noHandphoneController.text,
       if (imageUrl != null) 'profile_image': imageUrl,
-      'id_kpppa': (await FirebaseFirestore.instance.collection('kpppa').doc(_userId).get())['id_kpppa'],
+      'id_kpppa': (await FirebaseFirestore.instance
+          .collection('kpppa')
+          .doc(_userId)
+          .get())['id_kpppa'],
     };
 
     if (_dataDiriId == null) {
-      DocumentReference newDoc = await FirebaseFirestore.instance.collection('kpppaDataDiri').add(data);
+      DocumentReference newDoc = await FirebaseFirestore.instance
+          .collection('kpppaDataDiri')
+          .add(data);
       _dataDiriId = newDoc.id;
     } else {
-      await FirebaseFirestore.instance.collection('kpppaDataDiri').doc(_dataDiriId).update(data);
+      await FirebaseFirestore.instance
+          .collection('kpppaDataDiri')
+          .doc(_dataDiriId)
+          .update(data);
     }
 
     // Optionally, update the email and password in FirebaseAuth
@@ -115,7 +126,8 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
       }
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Profile updated successfully')));
   }
 
   @override
@@ -209,31 +221,42 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
+                    padding:
+                        EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        buildTextField('Nama Lengkap', _namaController, 'Masukkan nama lengkap'),
-                        buildTextField('Email', _emailController, 'Masukkan email'),
-                        buildTextField('Kata Sandi', _passwordController, 'Masukkan kata sandi', obscureText: true),
-                        buildTextField('Alamat', _alamatController, 'Masukkan alamat'),
-                        buildTextField('No Handphone', _noHandphoneController, 'Masukkan no handphone'),
+                        buildTextField('Nama Lengkap', _namaController,
+                            'Masukkan nama lengkap'),
+                        buildTextField(
+                            'Email', _emailController, 'Masukkan email'),
+                        buildTextField('Kata Sandi', _passwordController,
+                            'Masukkan kata sandi',
+                            obscureText: true),
+                        buildTextField(
+                            'Alamat', _alamatController, 'Masukkan alamat'),
+                        buildTextField('No Handphone', _noHandphoneController,
+                            'Masukkan no handphone'),
                       ],
                     ),
                   ),
                   SizedBox(height: 20.0),
                   Padding(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 50.0),
+                    padding: const EdgeInsets.only(
+                        left: 20.0, right: 20.0, bottom: 50.0),
                     child: SizedBox(
                       width: double.infinity,
                       height: 55.0,
                       child: ElevatedButton(
                         onPressed: _saveChanges,
                         style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF4682A9)), // Ubah warna latar belakang
-                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              Color(0xFF4682A9)), // Ubah warna latar belakang
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
                             RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0), // Ubah nilai sesuai kebutuhan
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // Ubah nilai sesuai kebutuhan
                             ),
                           ),
                         ),
@@ -253,7 +276,9 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
     );
   }
 
-  Widget buildTextField(String labelText, TextEditingController controller, String placeholder, {bool obscureText = false}) {
+  Widget buildTextField(
+      String labelText, TextEditingController controller, String placeholder,
+      {bool obscureText = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(

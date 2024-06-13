@@ -1,15 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'data_pelapor.dart'; // Import file data_pelapor.dart
 
 class KPPPADetailLaporan extends StatefulWidget {
+  final Map<String, dynamic> report;
+
+  KPPPADetailLaporan({required this.report});
+
   @override
   _KPPPADetailLaporanState createState() => _KPPPADetailLaporanState();
 }
 
 class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
-  String? _selectedStatus = 'Sedang diverifikasi'; // Initial selected value
+  String? _selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.report['status'] ?? 'Sedang diverifikasi';
+
+    final validStatuses = [
+      'Laporan diterima',
+      'Sedang diverifikasi',
+      'Bantuan awal',
+      'Proses hukum',
+      'Kasus selesai'
+    ];
+    if (!validStatuses.contains(_selectedStatus)) {
+      _selectedStatus = 'Sedang diverifikasi';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final report = widget.report;
+    final Timestamp timestamp = report['date'];
+    final date = timestamp.toDate();
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+
+    LatLng? location = _parseLocation(report['location']);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF4682A9),
@@ -31,34 +64,30 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            buildDetailItem(context, 'Nama Pelapor', 'Linda Permatasari',
-                isLink: true),
-            buildDetailItem(
-                context, 'Judul Laporan', 'Kekerasan dalam rumah tangga'),
-            buildDetailItem(context, 'Isi Laporan',
-                'Saya mengalami kekerasan dalam rumah tangga yang dilakukan oleh suami saya. Kejadian ini terjadi di rumah kami. Saya dipukul dan ditendang hingga mengalami luka-luka di beberapa bagian tubuh.'),
-            buildDetailItem(context, 'Tanggal Kejadian', '23-04-2024',
-                isDate: true),
-            buildLocationDetailItem('Lokasi Kejadian'),
-            buildDetailItem(context, 'Lampiran', 'buktivisum.jpg',
+            buildDetailItem(context, 'Nama Pelapor', report['reporterName'],
+                isLink: true, userId: report['userId']),
+            buildDetailItem(context, 'Judul Laporan', report['title']),
+            buildDetailItem(context, 'Isi Laporan', report['content']),
+            buildDetailItem(context, 'Tanggal Kejadian', formattedDate),
+            if (location != null)
+              buildLocationDetailItem('Lokasi Kejadian', location),
+            buildDetailItem(context, 'Lampiran',
+                report['attachmentUrl'] ?? 'No attachment available',
                 isFile: true),
             buildStatusDropdown(),
             SizedBox(height: 20.0),
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Add save functionality here
+                  _saveStatus(report['id']);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Color(0xFF4682A9), // Warna latar belakang tombol
-                  foregroundColor: Colors.white, // Warna teks tombol
-                  padding: EdgeInsets.symmetric(
-                      vertical: 18.0,
-                      horizontal: 80.0), // Menambah tinggi tombol
+                  backgroundColor: Color(0xFF4682A9),
+                  foregroundColor: Colors.white,
+                  padding:
+                      EdgeInsets.symmetric(vertical: 18.0, horizontal: 80.0),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                        4.0), // Mengurangi rounded pada tombol
+                    borderRadius: BorderRadius.circular(4.0),
                   ),
                 ),
                 child: Text('Simpan'),
@@ -70,8 +99,31 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
     );
   }
 
+  void _saveStatus(String reportId) async {
+    if (_selectedStatus == null) return;
+
+    // Save the status to Firestore
+    await FirebaseFirestore.instance
+        .collection('reports')
+        .doc(reportId)
+        .update({
+      'status': _selectedStatus,
+      'statusHistory': FieldValue.arrayUnion([
+        {'date': DateTime.now().toIso8601String(), 'status': _selectedStatus}
+      ])
+    });
+
+    // Optionally show a success message or navigate back
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Status laporan berhasil disimpan')),
+    );
+  }
+
   Widget buildDetailItem(BuildContext context, String title, String value,
-      {bool isLink = false, bool isDate = false, bool isFile = false}) {
+      {bool isLink = false,
+      bool isDate = false,
+      bool isFile = false,
+      String? userId}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -98,7 +150,7 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DataPelapor(),
+                          builder: (context) => DataPelapor(userId: userId!),
                         ),
                       );
                     },
@@ -142,10 +194,8 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
                                 value,
                                 style: TextStyle(color: Color(0xFF00355C)),
                               ),
-                              Icon(
-                                Icons.file_present,
-                                color: Color(0xFF00355C),
-                              ),
+                              Icon(Icons.file_present,
+                                  color: Color(0xFF00355C)),
                             ],
                           )
                         : Text(
@@ -158,7 +208,18 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
     );
   }
 
-  Widget buildLocationDetailItem(String title) {
+  LatLng? _parseLocation(String location) {
+    try {
+      final parts = location.split(',');
+      final lat = double.parse(parts[0].split(':')[1].trim());
+      final lng = double.parse(parts[1].split(':')[1].trim());
+      return LatLng(lat, lng);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Widget buildLocationDetailItem(String title, LatLng location) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -179,9 +240,34 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
               color: Color(0xFFC1D9F1),
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: Image.asset(
-              'images/map_sample.png', // ganti dengan gambar peta yang sesuai
-              fit: BoxFit.cover,
+            child: FlutterMap(
+              options: MapOptions(
+                center: location,
+                zoom: 15.0,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  subdomains: ['a', 'b', 'c'],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      width: 80.0,
+                      height: 80.0,
+                      point: location,
+                      builder: (ctx) => Container(
+                        child: Icon(
+                          Icons.location_pin,
+                          color: Colors.red,
+                          size: 40.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -212,18 +298,18 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
             ),
             child: DropdownButton<String>(
               value: _selectedStatus,
-              isExpanded: true,
-              icon: Icon(Icons.arrow_drop_down, color: Color(0xFF00355C)),
+              icon: Icon(Icons.arrow_drop_down),
               iconSize: 24,
               elevation: 16,
+              isExpanded: true,
               style: TextStyle(color: Color(0xFF00355C)),
               underline: Container(
                 height: 2,
-                color: Color(0xFF00355C),
+                color: Colors.transparent,
               ),
               onChanged: (String? newValue) {
                 setState(() {
-                  _selectedStatus = newValue;
+                  _selectedStatus = newValue!;
                 });
               },
               items: <String>[
@@ -245,81 +331,3 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
     );
   }
 }
-
-class DataPelapor extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF4682A9),
-        title: Center(
-          child: Text(
-            "Data Pelapor",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: <Widget>[
-            buildTextFormField('NIK', '3574082208943210'),
-            buildTextFormField('Jenis Kelamin', 'Perempuan'),
-            buildTextFormField('Tempat Lahir', 'Jakarta'),
-            buildTextFormField('Tanggal Lahir', '13 Februari 1996'),
-            buildTextFormField('Alamat Lengkap (Sesuai KTP)',
-                'Jalan Megah Indah Raya No. 10\nKelurahan Setia Budi, Kecamatan Kuningan\nJakarta Selatan 12950'),
-            buildTextFormField('Alamat Domisili',
-                'Jalan Megah Indah Raya No. 10\nKelurahan Setia Budi, Kecamatan Kuningan\nJakarta Selatan 12950'),
-            buildTextFormField('Status Pernikahan', 'Kawin Tercatat'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildTextFormField(String labelText, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            labelText,
-            style: TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF00355C),
-            ),
-          ),
-          SizedBox(height: 8.0),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Color(0xFFC1D9F1),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Color(0xFF00355C),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-void main() => runApp(MaterialApp(
-      home: KPPPADetailLaporan(),
-    ));

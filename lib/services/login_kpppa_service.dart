@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LoginService {
+class LoginKPPPAService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -16,17 +16,17 @@ class LoginService {
       // Get the user ID
       String userId = userCredential.user!.uid;
 
-      // Check if the user exists in the "users" collection
+      // Check if the user exists in the "kpppa" collection
       DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(userId).get();
+          await _firestore.collection('kpppa').doc(userId).get();
 
       if (!userDoc.exists) {
-        // User is not in the "users" collection, sign out and throw an exception
+        // User is not in the "kpppa" collection, sign out and throw an exception
         await _auth.signOut();
         throw Exception('User does not have access. Please contact support.');
       }
 
-      // User is in the "users" collection, proceed with login
+      // User is in the "kpppa" collection, proceed with login
     } on FirebaseAuthException catch (e) {
       String message;
       if (e.code == 'user-not-found') {
@@ -43,6 +43,20 @@ class LoginService {
       throw Exception(message);
     } catch (e) {
       throw Exception('Terjadi kesalahan. Silakan coba lagi.');
+    }
+  }
+
+  Future<String> getFullName(String userId) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('kpppa').doc(userId).get();
+      if (userDoc.exists) {
+        return userDoc['full_name'];
+      } else {
+        throw Exception('User document does not exist.');
+      }
+    } catch (e) {
+      throw Exception('Failed to get user full name: $e');
     }
   }
 }

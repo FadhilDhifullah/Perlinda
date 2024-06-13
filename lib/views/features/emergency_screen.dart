@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_perlinda/views/features/call_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmergencyScreen extends StatelessWidget {
   @override
@@ -39,16 +39,7 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.local_police,
               label: 'Polisi',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CallScreen(
-                      title: "Telepon Darurat Polisi",
-                      contactName: "POLSEK Sumbersari - Jember",
-                      phoneNumber: "0859191735426",
-                    ),
-                  ),
-                );
+                _makePhoneCall('0859191735426');
               },
             ),
             SizedBox(height: 30),
@@ -56,16 +47,7 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.local_hospital,
               label: 'Medis/Ambulans',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CallScreen(
-                      title: "Telepon Darurat Medis",
-                      contactName: "Rumah Sakit Terdekat",
-                      phoneNumber: "112",
-                    ),
-                  ),
-                );
+                _makePhoneCall('112');
               },
             ),
             SizedBox(height: 30),
@@ -73,22 +55,25 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.person,
               label: 'SAPA/Kemen PPPA',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CallScreen(
-                      title: "Telepon SAPA/Kemen PPPA",
-                      contactName: "SAPA Kemen PPPA",
-                      phoneNumber: "123",
-                    ),
-                  ),
-                );
+                _makePhoneCall('123');
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      throw 'Could not launch $launchUri';
+    }
   }
 }
 

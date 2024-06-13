@@ -73,7 +73,6 @@ class ReportHistory extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (context) => DetailRiwayatLaporan(
                                 reportId: report['id'],
-                                reportData: report,
                               ),
                             ),
                           );

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DataPelapor extends StatelessWidget {
+  final String userId;
+
+  DataPelapor({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,25 +25,40 @@ class DataPelapor extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: <Widget>[
-            buildTextFormField('NIK', '3574082208943210'),
-            buildTextFormField('Jenis Kelamin', 'Perempuan'),
-            buildTextFormField('Tempat Lahir', 'Jakarta'),
-            buildTextFormField('Tanggal Lahir', '13 Februari 1996'),
-            buildTextFormField(
-                'Alamat Lengkap (Sesuai KTP)', 
-                'Jalan Megah Indah Raya No. 10\nKelurahan Setia Budi, Kecamatan Kuningan\nJakarta Selatan 12950'
+      body: FutureBuilder<DocumentSnapshot>(
+        future:
+            FirebaseFirestore.instance.collection('dataDiri').doc(userId).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error fetching data'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('Data not found'));
+          }
+
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView(
+              children: <Widget>[
+                buildTextFormField('NIK', userData['nik'] ?? ''),
+                buildTextFormField(
+                    'Jenis Kelamin', userData['jenis_kelamin'] ?? ''),
+                buildTextFormField(
+                    'Tempat Lahir', userData['tempat_lahir'] ?? ''),
+                buildTextFormField(
+                    'Tanggal Lahir', userData['tanggal_lahir'] ?? ''),
+                buildTextFormField('Alamat Lengkap (Sesuai KTP)',
+                    userData['alamat_lengkap'] ?? ''),
+                buildTextFormField(
+                    'Status Pernikahan', userData['status_pernikahan'] ?? ''),
+              ],
             ),
-            buildTextFormField(
-                'Alamat Domisili', 
-                'Jalan Megah Indah Raya No. 10\nKelurahan Setia Budi, Kecamatan Kuningan\nJakarta Selatan 12950'
-            ),
-            buildTextFormField('Status Pernikahan', 'Kawin Tercatat'),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

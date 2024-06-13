@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_perlinda/views/features/bantuan_dukungan.dart';
 import '../kpppa_home_page.dart';
 import '../auth/kpppa_ubah_profile.dart'; // Import UbahProfile page
@@ -14,6 +15,28 @@ class KPPPAProfile extends StatefulWidget {
 
 class _KPPPAProfileState extends State<KPPPAProfile> {
   int _selectedIndex = 1; // Index of the selected item
+
+  Future<void> _logout() async {
+    try {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Clear any other user-specific data here if necessary
+
+      // Navigate to LandingPage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LandingPage()),
+      );
+    } catch (e) {
+      // Handle error if any
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error during logout: ${e.toString()}'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,11 +177,7 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                 ),
                 const SizedBox(height: 10.0),
                 GestureDetector(
-                  onTap: () {
-                    // Navigate to LandingPage
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => LandingPage()));
-                  },
+                  onTap: _logout,
                   child: Row(
                     children: [
                       Icon(Icons.logout,
