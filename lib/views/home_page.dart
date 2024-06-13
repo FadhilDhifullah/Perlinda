@@ -6,6 +6,8 @@ import 'package:flutter_perlinda/views/features/profile.dart';
 import 'package:flutter_perlinda/views/features/report.dart';
 import 'package:flutter_perlinda/views/features/report_history.dart';
 import 'package:flutter_perlinda/views/features/undang_undang_kdrt.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -22,6 +24,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0; // Indeks item yang dipilih
+  String? userName; // User name initialized as null
 
   final List<String> titles = [
     'Buat Laporan',
@@ -36,6 +39,22 @@ class _HomePageState extends State<HomePage> {
     'images/uud_kdrt.png',
     'images/telepon_darurat.png',
   ];
+
+  @override
+  Future<void> initState() async {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      setState(() {
+        userName = userDoc['full_name'];
+      });
+    }
+  }
 
   // Fungsi untuk menangani pemilihan item navigasi
   void _onItemTapped(int index) {
@@ -110,14 +129,16 @@ class _HomePageState extends State<HomePage> {
                 Positioned(
                   bottom: 16.0,
                   left: 16.0,
-                  child: Text(
-                    'Semoga harimu baik, Linda Permatasari!',
-                    style: TextStyle(
-                      color: Color(0xFF00355C),
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: userName != null
+                      ? Text(
+                          'Semoga harimu baik, $userName!',
+                          style: TextStyle(
+                            color: Color(0xFF00355C),
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : CircularProgressIndicator(),
                 ),
               ],
             ),
