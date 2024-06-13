@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_perlinda/views/features/bantuan_hukum.dart';
 import 'package:flutter_perlinda/views/features/bantuan_psikolog.dart';
-import 'package:flutter_perlinda/views/features/emergency.dart';
+import 'package:flutter_perlinda/views/features/emergency_screen.dart';
 import 'package:flutter_perlinda/views/features/profile.dart';
 import 'package:flutter_perlinda/views/features/report.dart';
 import 'package:flutter_perlinda/views/features/report_history.dart';
@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                   left: 16.0,
                   child: Image.asset(
                     'images/logo_perlinda.png',
-                    width: 68.0,  // Sesuaikan lebar sesuai kebutuhan
+                    width: 68.0, // Sesuaikan lebar sesuai kebutuhan
                     height: 68.0, // Sesuaikan tinggi sesuai kebutuhan
                   ),
                 ),
@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Container(
                           height: 90.0, // Adjusted height
-                          width: 90.0,  // Adjusted width
+                          width: 90.0, // Adjusted width
                           decoration: BoxDecoration(
                             color: Color(0xFFC1D9F1),
                             boxShadow: [
@@ -152,7 +152,8 @@ class _HomePageState extends State<HomePage> {
                                 color: Colors.grey.withOpacity(0.5),
                                 spreadRadius: 2,
                                 blurRadius: 5,
-                                offset: Offset(0, 3), // Mengubah posisi bayangan
+                                offset:
+                                    Offset(0, 3), // Mengubah posisi bayangan
                               ),
                             ],
                             borderRadius: BorderRadius.circular(10.0),
@@ -165,12 +166,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10.0), // Spasi antara kotak dan teks
+                        const SizedBox(
+                            height: 10.0), // Spasi antara kotak dan teks
                         Text(
-                          titles[index].replaceAll(' ', '\n'), // Mengganti spasi dengan newline untuk memisahkan teks menjadi 2 baris
+                          titles[index].replaceAll(' ',
+                              '\n'), // Mengganti spasi dengan newline untuk memisahkan teks menjadi 2 baris
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 14.0, // Sesuaikan ukuran font sesuai kebutuhan
+                            fontSize:
+                                14.0, // Sesuaikan ukuran font sesuai kebutuhan
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF00355C),
                           ),
@@ -208,11 +212,13 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => BantuanHukumPage()),
+                          MaterialPageRoute(
+                              builder: (context) => BantuanHukumPage()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4682A9), // Warna latar belakang
+                        backgroundColor:
+                            Color(0xFF4682A9), // Warna latar belakang
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -222,7 +228,9 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             'Dapatkan Bantuan Hukum',
-                            style: TextStyle(color: Colors.white, fontSize: 16.0), // Ubah warna teks
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16.0), // Ubah warna teks
                           ),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
@@ -236,11 +244,13 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => BantuanPsikologPage()),
+                          MaterialPageRoute(
+                              builder: (context) => BantuanPsikologPage()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4682A9), // Warna latar belakang
+                        backgroundColor:
+                            Color(0xFF4682A9), // Warna latar belakang
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -250,7 +260,9 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             'Dapatkan Bantuan Psikolog',
-                            style: TextStyle(color: Colors.white, fontSize: 16.0), // Ubah warna teks
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16.0), // Ubah warna teks
                           ),
                           Icon(
                             Icons.arrow_forward_ios_rounded,

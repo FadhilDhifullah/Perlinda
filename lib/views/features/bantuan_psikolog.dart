@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_perlinda/services/chat_service.dart';
 import 'package:flutter_perlinda/views/features/detail_psikolog.dart';
-
-import 'chat_psikolog.dart';
 
 class BantuanPsikologPage extends StatelessWidget {
   @override
@@ -56,11 +55,13 @@ class BantuanPsikologPage extends StatelessWidget {
                   LawyerCard(
                     imagePath: 'images/foto_samsul.png',
                     name: 'Dr. Samsul Arif , M.Psi',
+                    phoneNumber: '0859191735428', // Nomor WhatsApp pertama
                   ),
                   SizedBox(height: 16),
                   LawyerCard(
                     imagePath: 'images/foto_afreya.png',
                     name: 'Dr. Afreya, M.Psi',
+                    phoneNumber: '0859191735429', // Nomor WhatsApp kedua
                   ),
                 ],
               ),
@@ -97,8 +98,11 @@ class SearchBar extends StatelessWidget {
 class LawyerCard extends StatelessWidget {
   final String imagePath;
   final String name;
+  final String phoneNumber;
+  final ChatService _chatService = ChatService();
 
-  LawyerCard({required this.imagePath, required this.name});
+  LawyerCard(
+      {required this.imagePath, required this.name, required this.phoneNumber});
 
   @override
   Widget build(BuildContext context) {
@@ -163,10 +167,7 @@ class LawyerCard extends StatelessWidget {
               Spacer(),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ChatPsikolog()),
-                  );
+                  _chatService.openWhatsAppChat(phoneNumber);
                 },
                 child: Text(
                   'Chat Sekarang',

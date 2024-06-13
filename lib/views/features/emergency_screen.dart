@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_perlinda/views/features/emergency_call_polisi.dart';
-import 'package:flutter_perlinda/views/features/emergency_call_medis.dart';
-import 'package:flutter_perlinda/views/features/emergency_call_sapa.dart';
+import 'package:flutter_perlinda/views/features/call_screen.dart';
 
 class EmergencyScreen extends StatelessWidget {
   @override
@@ -44,7 +42,12 @@ class EmergencyScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => EmergencyCallPolice()),
+                    builder: (context) => CallScreen(
+                      title: "Telepon Darurat Polisi",
+                      contactName: "POLSEK Sumbersari - Jember",
+                      phoneNumber: "0859191735426",
+                    ),
+                  ),
                 );
               },
             ),
@@ -55,7 +58,13 @@ class EmergencyScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => EmergencyCallMedis()),
+                  MaterialPageRoute(
+                    builder: (context) => CallScreen(
+                      title: "Telepon Darurat Medis",
+                      contactName: "Rumah Sakit Terdekat",
+                      phoneNumber: "112",
+                    ),
+                  ),
                 );
               },
             ),
@@ -66,7 +75,13 @@ class EmergencyScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => EmergencyCallSapa()),
+                  MaterialPageRoute(
+                    builder: (context) => CallScreen(
+                      title: "Telepon SAPA/Kemen PPPA",
+                      contactName: "SAPA Kemen PPPA",
+                      phoneNumber: "123",
+                    ),
+                  ),
                 );
               },
             ),
