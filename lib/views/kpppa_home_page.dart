@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_perlinda/views/features/kpppa_profile.dart';
 import 'package:flutter_perlinda/views/features/kpppa_daftar_laporan.dart';
-import 'package:flutter_perlinda/views/features/kpppa_riwayat_laporan.dart';
 import 'package:flutter_perlinda/services/login_kpppa_service.dart';
 
 class KPPPAHomePage extends StatefulWidget {
@@ -44,12 +43,10 @@ class _KPPPAHomePageState extends State<KPPPAHomePage> {
 
   final List<String> titles = [
     'Lihat Laporan',
-    'Riwayat Laporan',
   ];
 
   final List<String> images = [
     'images/lihat_laporan.png',
-    'images/riwayat_laporan.png',
   ];
 
   // Function to handle navigation item selection
@@ -74,11 +71,6 @@ class _KPPPAHomePageState extends State<KPPPAHomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => KPPPAReportHistories()),
-      );
-    } else if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => KPPPAReportList()),
       );
     }
   }
@@ -136,7 +128,7 @@ class _KPPPAHomePageState extends State<KPPPAHomePage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: ListView.builder(
-                  itemCount: 2,
+                  itemCount: 1,
                   itemBuilder: (BuildContext context, int index) {
                     return GestureDetector(
                       onTap: () {
