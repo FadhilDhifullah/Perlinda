@@ -20,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     super.dispose();
   }
 
@@ -52,6 +54,7 @@ class _LoginPageState extends State<LoginPage> {
 
     Future.delayed(Duration(seconds: 3), () {
       _overlayEntry?.remove();
+      _overlayEntry = null;
     });
   }
 

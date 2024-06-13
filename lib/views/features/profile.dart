@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_perlinda/views/features/bantuan_dukungan.dart';
 import '../home_page.dart';
 import '../auth/ubah_profile.dart'; // Import UbahProfile page
@@ -14,6 +16,27 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   int _selectedIndex = 1; // Index of the selected item
+  final User? user = FirebaseAuth.instance.currentUser;
+  String _fullName = '';
+  String? _profilePictureUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    if (user != null) {
+      final userData = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+      if (userData.exists) {
+        setState(() {
+          _fullName = userData['full_name'];
+          _profilePictureUrl = userData['profile_picture'];
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +70,18 @@ class _ProfileState extends State<Profile> {
                     color: Colors.white,
                   ),
                   child: ClipOval(
-                    child: Image.asset(
-                      'images/foto_profil.png',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
+                    child: _profilePictureUrl != null
+                        ? Image.network(
+                            _profilePictureUrl!,
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          )
+                        : Icon(
+                            Icons.account_circle,
+                            size: 120,
+                            color: Colors.grey,
+                          ),
                   ),
                 ),
               ),
@@ -62,7 +91,7 @@ class _ProfileState extends State<Profile> {
                   children: [
                     SizedBox(height: 12.0),
                     Text(
-                      'Linda Permatasari',
+                      _fullName,
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                     SizedBox(height: 20.0),
