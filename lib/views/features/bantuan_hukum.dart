@@ -61,13 +61,13 @@ class BantuanHukumPage extends StatelessWidget {
                   LawyerCard(
                     imagePath: 'images/foto_gojo.png',
                     name: 'Gojo Sitorus, M.H',
-                    phoneNumber: '0859191735426', // Nomor WhatsApp pertama
+                    phoneNumber: '+62859191735426', // Nomor WhatsApp pertama
                   ),
                   SizedBox(height: 16),
                   LawyerCard(
                     imagePath: 'images/foto_fuad.png',
                     name: 'Fuad Rusdi, S.H',
-                    phoneNumber: '082140830811', // Nomor WhatsApp kedua
+                    phoneNumber: '+6282140830811', // Nomor WhatsApp kedua
                   ),
                 ],
               ),
