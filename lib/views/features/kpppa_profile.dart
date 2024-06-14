@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_perlinda/views/features/bantuan_dukungan.dart';
 import '../kpppa_home_page.dart';
 import '../auth/kpppa_ubah_profile.dart'; // Import UbahProfile page
@@ -15,6 +16,37 @@ class KPPPAProfile extends StatefulWidget {
 
 class _KPPPAProfileState extends State<KPPPAProfile> {
   int _selectedIndex = 1; // Index of the selected item
+  User? _currentUser;
+  Map<String, dynamic>? _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser != null) {
+      _fetchUserData();
+    }
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('kpppa')
+          .doc(_currentUser!.uid)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          _userData = userDoc.data() as Map<String, dynamic>;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to fetch user data: ${e.toString()}'),
+        ),
+      );
+    }
+  }
 
   Future<void> _logout() async {
     try {
@@ -40,6 +72,14 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
 
   @override
   Widget build(BuildContext context) {
+    if (_currentUser == null) {
+      return Scaffold(
+        body: Center(
+          child: Text('No user is currently logged in.'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false, // Remove back button
@@ -70,12 +110,19 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                     color: Colors.white,
                   ),
                   child: ClipOval(
-                    child: Image.asset(
-                      'images/kpppa_foto_profil.png',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
+                    child: _userData != null && _userData!['profile_picture'] != null
+                        ? Image.network(
+                            _userData!['profile_picture'],
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            'images/kpppa_foto_profil.png',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),
@@ -85,7 +132,7 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                   children: [
                     SizedBox(height: 12.0),
                     Text(
-                      'Meilin Ayu Sari',
+                      _userData != null ? _userData!['full_name'] : 'Loading...',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -102,10 +149,8 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(8)), // Adjust the radius
-                        backgroundColor:
-                            Color(0xFF00355C), // Adjust the background color
+                            borderRadius: BorderRadius.circular(8)), // Adjust the radius
+                        backgroundColor: Color(0xFF00355C), // Adjust the background color
                         fixedSize: Size(224, 55), // Adjust the width and height
                       ),
                       child: Text(
@@ -113,8 +158,7 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                         style: TextStyle(
                             fontSize: 16,
                             color: Colors.white,
-                            fontWeight:
-                                FontWeight.bold), // Adjust the text size
+                            fontWeight: FontWeight.bold), // Adjust the text size
                       ),
                     ),
                   ],
@@ -125,8 +169,7 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
           Padding(
             padding: EdgeInsets.all(20.0),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start, // Align text to the left
+              crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
               children: [
                 GestureDetector(
                   onTap: () {
@@ -138,15 +181,11 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.person,
-                          color: Colors
-                              .black), // Add an icon to the left of the text
-                      SizedBox(
-                          width: 8), // Add a gap between the icon and the text
+                      Icon(Icons.person, color: Colors.black), // Add an icon to the left of the text
+                      SizedBox(width: 8), // Add a gap between the icon and the text
                       Text(
                         'Data Diri',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -162,15 +201,11 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.help,
-                          color: Colors
-                              .black), // Add an icon to the left of the text
-                      SizedBox(
-                          width: 8), // Add a gap between the icon and the text
+                      Icon(Icons.help, color: Colors.black), // Add an icon to the left of the text
+                      SizedBox(width: 8), // Add a gap between the icon and the text
                       Text(
                         'Bantuan & Dukungan',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -180,11 +215,8 @@ class _KPPPAProfileState extends State<KPPPAProfile> {
                   onTap: _logout,
                   child: Row(
                     children: [
-                      Icon(Icons.logout,
-                          color: Colors
-                              .red), // Add an icon to the left of the text
-                      SizedBox(
-                          width: 8), // Add a gap between the icon and the text
+                      Icon(Icons.logout, color: Colors.red), // Add an icon to the left of the text
+                      SizedBox(width: 8), // Add a gap between the icon and the text
                       Text(
                         'Keluar',
                         style: TextStyle(
