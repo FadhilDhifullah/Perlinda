@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'bantuan_hukum.dart';
 
 class DetailAdvokat extends StatelessWidget {
-  final String imagePath = 'images/foto_gojo.png';
-  final String name = 'Gojo Sitorus, M.H';
-  final String title = 'Advokat';
-  final String description =
-      'Gojo Sitorus adalah seorang advokat berpengalaman yang memiliki spesialisasi dalam penanganan kasus Kekerasan Dalam Rumah Tangga (KDRT). '
-      'Dengan lebih dari sepuluh tahun pengalaman di bidang hukum, Gojo telah berhasil membela hak-hak korban KDRT dan memberikan bantuan hukum yang diperlukan untuk melindungi klien-kliennya. '
-      'Ia memegang gelar sarjana hukum dari Universitas Nasional dan telah mengikuti berbagai pelatihan dan seminar terkait KDRT serta hukum keluarga.';
+  final String docId;
+
+  const DetailAdvokat({Key? key, required this.docId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -30,73 +27,91 @@ class DetailAdvokat extends StatelessWidget {
           },
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            color: Color(0xFF4682A9),
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage(imagePath),
-                ),
-                SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('advokat').doc(docId).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('Data tidak ditemukan'));
+          }
+
+          var data = snapshot.data!.data() as Map<String, dynamic>;
+          String imagePath = data['image'] ?? 'images/default_avatar.png';
+          String name = data['full_name'] ?? 'Nama tidak tersedia';
+          String title = 'Advokat';
+          String description = data['description'] ?? 'Deskripsi tidak tersedia';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                color: Color(0xFF4682A9),
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+                child: Row(
                   children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: NetworkImage(imagePath),
                     ),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                    SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Tentang Saya',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Color(0xFFDAE8FC),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                description,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Tentang Saya',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                textAlign: TextAlign.justify,
               ),
-            ),
-          ),
-        ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFDAE8FC),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

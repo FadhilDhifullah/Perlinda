@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 class KPPPAUbahProfile extends StatefulWidget {
   const KPPPAUbahProfile({Key? key}) : super(key: key);
@@ -14,120 +14,95 @@ class KPPPAUbahProfile extends StatefulWidget {
 
 class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
   File? _image;
-  TextEditingController _namaController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _alamatController = TextEditingController();
-  TextEditingController _noHandphoneController = TextEditingController();
-  String? _userId;
-  String? _dataDiriId;
-  String? _profileImageUrl;
+  String? _imageUrl;
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _alamatController = TextEditingController();
+  final TextEditingController _noHandphoneController = TextEditingController();
+  final User? user = FirebaseAuth.instance.currentUser;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _fetchUserData();
   }
 
-  Future<void> _loadUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
+  Future<void> _fetchUserData() async {
     if (user != null) {
-      setState(() {
-        _userId = user.uid;
-      });
-
-      // Fetch the data from the kpppa collection
-      DocumentSnapshot kpppaDoc = await FirebaseFirestore.instance
-          .collection('kpppa')
-          .doc(user.uid)
-          .get();
-      if (kpppaDoc.exists) {
+      final userData = await FirebaseFirestore.instance.collection('kpppa').doc(user!.uid).get();
+      if (userData.exists) {
         setState(() {
-          _namaController.text = kpppaDoc['full_name'] ?? '';
-          _emailController.text = kpppaDoc['email'] ?? '';
+          _namaController.text = userData['full_name'] ?? '';
+          _emailController.text = userData['email'] ?? '';
+          _alamatController.text = userData['alamat'] ?? '';
+          _noHandphoneController.text = userData['no_handphone'] ?? '';
+          _passwordController.text = '********'; // Mask the password
+          _imageUrl = userData['profile_picture'];
         });
-
-        // Check if there's an existing document in kpppaDataDiri
-        QuerySnapshot dataDiriSnapshot = await FirebaseFirestore.instance
-            .collection('kpppaDataDiri')
-            .where('id_kpppa', isEqualTo: kpppaDoc['id_kpppa'])
-            .get();
-
-        if (dataDiriSnapshot.docs.isNotEmpty) {
-          DocumentSnapshot dataDiriDoc = dataDiriSnapshot.docs.first;
-          setState(() {
-            _dataDiriId = dataDiriDoc.id;
-            _alamatController.text = dataDiriDoc['address'] ?? '';
-            _noHandphoneController.text = dataDiriDoc['phone'] ?? '';
-            _profileImageUrl = dataDiriDoc['profile_image'];
-          });
-        }
       }
     }
   }
 
   Future<void> _getImage() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png'],
-    );
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-    if (result != null) {
+    if (pickedFile != null) {
       setState(() {
-        _image = File(result.files.single.path!);
+        _image = File(pickedFile.path);
       });
     }
   }
 
-  Future<void> _saveChanges() async {
-    if (_userId == null) return;
-
-    String? imageUrl;
+  Future<void> _uploadImage() async {
     if (_image != null) {
-      UploadTask uploadTask = FirebaseStorage.instance
-          .ref('profile_images/$_userId.jpg')
-          .putFile(_image!);
-      TaskSnapshot snapshot = await uploadTask;
-      imageUrl = await snapshot.ref.getDownloadURL();
+      try {
+        final ref = FirebaseStorage.instance.ref().child('profile_pictures_kpppa').child('${user!.uid}.jpg');
+        await ref.putFile(_image!);
+        _imageUrl = await ref.getDownloadURL();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengunggah gambar: $e')),
+        );
+      }
     }
+  }
 
-    Map<String, dynamic> data = {
-      'full_name': _namaController.text,
-      'email': _emailController.text,
-      'address': _alamatController.text,
-      'phone': _noHandphoneController.text,
-      if (imageUrl != null) 'profile_image': imageUrl,
-      'id_kpppa': (await FirebaseFirestore.instance
-          .collection('kpppa')
-          .doc(_userId)
-          .get())['id_kpppa'],
-    };
-
-    if (_dataDiriId == null) {
-      DocumentReference newDoc = await FirebaseFirestore.instance
-          .collection('kpppaDataDiri')
-          .add(data);
-      _dataDiriId = newDoc.id;
-    } else {
-      await FirebaseFirestore.instance
-          .collection('kpppaDataDiri')
-          .doc(_dataDiriId)
-          .update(data);
-    }
-
-    // Optionally, update the email and password in FirebaseAuth
-    User? user = FirebaseAuth.instance.currentUser;
+  Future<void> _saveChanges() async {
     if (user != null) {
-      if (_emailController.text != user.email) {
-        await user.updateEmail(_emailController.text);
-      }
-      if (_passwordController.text.isNotEmpty) {
-        await user.updatePassword(_passwordController.text);
-      }
-    }
+      try {
+        await _uploadImage();
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Profile updated successfully')));
+        await FirebaseFirestore.instance.collection('kpppa').doc(user!.uid).update({
+          'full_name': _namaController.text,
+          'email': _emailController.text,
+          'alamat': _alamatController.text,
+          'no_handphone': _noHandphoneController.text,
+          'profile_picture': _imageUrl,
+        });
+
+        // Optionally, update the email and password in FirebaseAuth
+        if (_emailController.text != user!.email) {
+          await user!.updateEmail(_emailController.text);
+        }
+        if (_passwordController.text.isNotEmpty && _passwordController.text != '********') {
+          await user!.updatePassword(_passwordController.text);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Perubahan berhasil disimpan')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan perubahan: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User tidak ditemukan. Silakan login kembali.')),
+      );
+    }
   }
 
   @override
@@ -141,144 +116,120 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
         ),
         centerTitle: true,
         backgroundColor: Color(0xFF4682A9),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: FutureBuilder(
-        future: _loadUserData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else {
-            return SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  color: Color(0xFF4682A9),
+                  width: double.infinity,
+                  height: 200.0,
+                ),
+                Positioned(
+                  top: 20,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        child: ClipOval(
+                          child: _image != null
+                              ? Image.file(
+                                  _image!,
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                )
+                              : (_imageUrl != null
+                                  ? Image.network(
+                                      _imageUrl!,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Icon(
+                                      Icons.account_circle,
+                                      size: 120,
+                                      color: Colors.grey,
+                                    )),
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: ElevatedButton(
+                          onPressed: _getImage,
+                          style: ElevatedButton.styleFrom(
+                            shape: CircleBorder(),
+                            padding: EdgeInsets.all(8),
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.black,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: _getImage,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          color: Color(0xFF4682A9),
-                          width: double.infinity,
-                          height: 200.0,
-                        ),
-                        Positioned(
-                          top: 20,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 140,
-                                height: 140,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                ),
-                                child: ClipOval(
-                                  child: _image != null
-                                      ? Image.file(
-                                          _image!,
-                                          width: 120,
-                                          height: 120,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : (_profileImageUrl != null
-                                          ? Image.network(
-                                              _profileImageUrl!,
-                                              width: 120,
-                                              height: 120,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Container(
-                                              color: Colors.grey[200],
-                                              width: 120,
-                                              height: 120,
-                                            )),
-                                ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  margin: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white,
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.black,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding:
-                        EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        buildTextField('Nama Lengkap', _namaController,
-                            'Masukkan nama lengkap'),
-                        buildTextField(
-                            'Email', _emailController, 'Masukkan email'),
-                        buildTextField('Kata Sandi', _passwordController,
-                            'Masukkan kata sandi',
-                            obscureText: true),
-                        buildTextField(
-                            'Alamat', _alamatController, 'Masukkan alamat'),
-                        buildTextField('No Handphone', _noHandphoneController,
-                            'Masukkan no handphone'),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20.0),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        left: 20.0, right: 20.0, bottom: 50.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 55.0,
-                      child: ElevatedButton(
-                        onPressed: _saveChanges,
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                              Color(0xFF4682A9)), // Ubah warna latar belakang
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  10.0), // Ubah nilai sesuai kebutuhan
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          'Simpan Perubahan',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                  buildTextField('Nama Lengkap', _namaController, 'Masukkan nama lengkap'),
+                  buildTextField('Email', _emailController, 'Masukkan email', readOnly: true),
+                  buildTextField('Kata Sandi', _passwordController, 'Masukkan kata sandi', obscureText: true, readOnly: true),
+                  buildTextField('Alamat', _alamatController, 'Masukkan alamat'),
+                  buildTextField('No Handphone', _noHandphoneController, 'Masukkan no handphone'),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 50.0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 55.0,
+                child: ElevatedButton(
+                  onPressed: _saveChanges,
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF4682A9)),
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
                       ),
                     ),
                   ),
-                ],
+                  child: Text(
+                    'Simpan Perubahan',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
               ),
-            );
-          }
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget buildTextField(
-      String labelText, TextEditingController controller, String placeholder,
-      {bool obscureText = false}) {
+  Widget buildTextField(String labelText, TextEditingController controller, String placeholder, {bool obscureText = false, bool readOnly = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(
@@ -292,11 +243,12 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
           TextFormField(
             controller: controller,
             obscureText: obscureText,
+            readOnly: readOnly,
             decoration: InputDecoration(
               hintText: placeholder,
-              border: OutlineInputBorder(), // Set border menjadi kotak
-              filled: true, // Mengisi latar belakang
-              fillColor: Color(0xFFC1D9F1), // Warna latar belakang
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Color(0xFFC1D9F1),
             ),
           ),
         ],
@@ -305,6 +257,8 @@ class _KPPPAUbahProfileState extends State<KPPPAUbahProfile> {
   }
 }
 
-void main() => runApp(MaterialApp(
-      home: KPPPAUbahProfile(),
-    ));
+void main() {
+  runApp(MaterialApp(
+    home: KPPPAUbahProfile(),
+  ));
+}

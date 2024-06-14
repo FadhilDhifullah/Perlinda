@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_perlinda/services/chat_service.dart';
 import 'package:flutter_perlinda/views/features/detail_psikolog.dart';
 
-class BantuanPsikologPage extends StatelessWidget {
+class BantuanPsikologPage extends StatefulWidget {
+  @override
+  _BantuanPsikologPageState createState() => _BantuanPsikologPageState();
+}
+
+class _BantuanPsikologPageState extends State<BantuanPsikologPage> {
+  String _searchQuery = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +50,13 @@ class BantuanPsikologPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
-                SearchBar(),
+                SearchBar(
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                ),
                 SizedBox(height: 16),
               ],
             ),
@@ -50,20 +65,35 @@ class BantuanPsikologPage extends StatelessWidget {
             child: Container(
               color: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              child: ListView(
-                children: [
-                  LawyerCard(
-                    imagePath: 'images/foto_samsul.png',
-                    name: 'Dr. Samsul Arif , M.Psi',
-                    phoneNumber: '0859191735428', // Nomor WhatsApp pertama
-                  ),
-                  SizedBox(height: 16),
-                  LawyerCard(
-                    imagePath: 'images/foto_afreya.png',
-                    name: 'Dr. Afreya, M.Psi',
-                    phoneNumber: '0859191735429', // Nomor WhatsApp kedua
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('psikolog').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData) {
+                    return Center(child: Text('Tidak ada data'));
+                  }
+
+                  final psikologDocs = snapshot.data!.docs;
+                  final filteredDocs = psikologDocs.where((doc) {
+                    var data = doc.data() as Map<String, dynamic>;
+                    return data['full_name'].toLowerCase().contains(_searchQuery);
+                  }).toList();
+
+                  return ListView.builder(
+                    itemCount: filteredDocs.length,
+                    itemBuilder: (context, index) {
+                      var psikolog = filteredDocs[index].data() as Map<String, dynamic>;
+                      return PsychologistCard(
+                        docId: filteredDocs[index].id,
+                        imagePath: psikolog['image'] ?? 'images/default_avatar.png',
+                        name: psikolog['full_name'] ?? 'Nama tidak tersedia',
+                        phoneNumber: psikolog['whatsapp'] ?? 'Nomor tidak tersedia',
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -74,6 +104,10 @@ class BantuanPsikologPage extends StatelessWidget {
 }
 
 class SearchBar extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+
+  SearchBar({required this.onChanged});
+
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -91,18 +125,24 @@ class SearchBar extends StatelessWidget {
           borderSide: BorderSide(color: Colors.black),
         ),
       ),
+      onChanged: onChanged,
     );
   }
 }
 
-class LawyerCard extends StatelessWidget {
+class PsychologistCard extends StatelessWidget {
+  final String docId;
   final String imagePath;
   final String name;
   final String phoneNumber;
   final ChatService _chatService = ChatService();
 
-  LawyerCard(
-      {required this.imagePath, required this.name, required this.phoneNumber});
+  PsychologistCard({
+    required this.docId,
+    required this.imagePath,
+    required this.name,
+    required this.phoneNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -130,14 +170,16 @@ class LawyerCard extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => DetailPsikolog()),
+                MaterialPageRoute(
+                  builder: (context) => DetailPsikolog(docId: docId),
+                ),
               );
             },
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundImage: AssetImage(imagePath),
+                  backgroundImage: NetworkImage(imagePath),
                 ),
                 SizedBox(width: 16),
                 Column(

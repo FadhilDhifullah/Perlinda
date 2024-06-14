@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_perlinda/services/chat_service.dart';
 import 'package:flutter_perlinda/views/features/detail_advokat.dart'; // Sesuaikan dengan path yang benar
 
-class BantuanHukumPage extends StatelessWidget {
+class BantuanHukumPage extends StatefulWidget {
+  @override
+  _BantuanHukumPageState createState() => _BantuanHukumPageState();
+}
+
+class _BantuanHukumPageState extends State<BantuanHukumPage> {
+  String _searchQuery = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Color(0xFF4682A9),
         elevation: 0,
@@ -24,55 +33,79 @@ class BantuanHukumPage extends StatelessWidget {
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Color(0xFF4682A9),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Column(
-                children: [
-                  Image.asset(
-                    'images/bantuan_hukum.png',
-                    height: 120,
-                  ),
-                  SizedBox(height: 16.0),
-                  Text(
-                    'Dapatkan bantuan hukum gratis di Perlinda untuk mendukung Anda dalam menghadapi Kekerasan Dalam Rumah Tangga (KDRT). Konsultasi tersedia dengan para profesional kami. Jangan ragu untuk menghubungi kami.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16.0,
-                      color: Colors.white,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Color(0xFF4682A9),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Column(
+                  children: [
+                    Image.asset(
+                      'images/bantuan_hukum.png',
+                      height: 120,
                     ),
-                  ),
-                ],
+                    SizedBox(height: 16.0),
+                    Text(
+                      'Dapatkan bantuan hukum gratis di Perlinda untuk mendukung Anda dalam menghadapi Kekerasan Dalam Rumah Tangga (KDRT). Konsultasi tersedia dengan para profesional kami. Jangan ragu untuk menghubungi kami.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 16.0),
-            SearchBar(),
-            SizedBox(height: 16.0),
-            Expanded(
-              child: ListView(
-                children: [
-                  LawyerCard(
-                    imagePath: 'images/foto_gojo.png',
-                    name: 'Gojo Sitorus, M.H',
-                    phoneNumber: '+62859191735426', // Nomor WhatsApp pertama
-                  ),
-                  SizedBox(height: 16),
-                  LawyerCard(
-                    imagePath: 'images/foto_fuad.png',
-                    name: 'Fuad Rusdi, S.H',
-                    phoneNumber: '+6282140830811', // Nomor WhatsApp kedua
-                  ),
-                ],
+              SizedBox(height: 16.0),
+              SearchBar(
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
               ),
-            ),
-          ],
+              SizedBox(height: 16.0),
+              SizedBox(
+                height: MediaQuery.of(context).size.height - 320, // Adjust this value according to your layout
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('advokat').snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData) {
+                      return Center(child: Text('Tidak ada data'));
+                    }
+
+                    final advokatDocs = snapshot.data!.docs;
+                    final filteredDocs = advokatDocs.where((doc) {
+                      var data = doc.data() as Map<String, dynamic>;
+                      return data['full_name'].toLowerCase().contains(_searchQuery);
+                    }).toList();
+
+                    return ListView.builder(
+                      itemCount: filteredDocs.length,
+                      itemBuilder: (context, index) {
+                        var advokat = filteredDocs[index].data() as Map<String, dynamic>;
+                        return LawyerCard(
+                          docId: filteredDocs[index].id,
+                          imagePath: advokat['image'] ?? 'images/default_avatar.png',
+                          name: advokat['full_name'] ?? 'Nama tidak tersedia',
+                          phoneNumber: advokat['whatsapp'] ?? 'Nomor tidak tersedia',
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -80,6 +113,10 @@ class BantuanHukumPage extends StatelessWidget {
 }
 
 class SearchBar extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+
+  SearchBar({required this.onChanged});
+
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -97,18 +134,24 @@ class SearchBar extends StatelessWidget {
           borderSide: BorderSide(color: Colors.black),
         ),
       ),
+      onChanged: onChanged,
     );
   }
 }
 
 class LawyerCard extends StatelessWidget {
+  final String docId;
   final String imagePath;
   final String name;
   final String phoneNumber;
   final ChatService _chatService = ChatService();
 
-  LawyerCard(
-      {required this.imagePath, required this.name, required this.phoneNumber});
+  LawyerCard({
+    required this.docId,
+    required this.imagePath,
+    required this.name,
+    required this.phoneNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -136,14 +179,16 @@ class LawyerCard extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => DetailAdvokat()),
+                MaterialPageRoute(
+                  builder: (context) => DetailAdvokat(docId: docId),
+                ),
               );
             },
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundImage: AssetImage(imagePath),
+                  backgroundImage: NetworkImage(imagePath),
                 ),
                 SizedBox(width: 16),
                 Column(
