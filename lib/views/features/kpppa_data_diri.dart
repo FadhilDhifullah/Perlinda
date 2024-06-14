@@ -260,4 +260,3 @@ class _KPPPADataDiriState extends State<KPPPADataDiri> {
 void main() => runApp(MaterialApp(
       home: KPPPADataDiri(),
     ));
-ad
