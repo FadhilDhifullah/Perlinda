@@ -58,7 +58,7 @@ class ReportHistory extends StatelessWidget {
                         style: TextStyle(
                           color: Color(0xFF00355C),
                           fontWeight: FontWeight.bold,
-                          fontSize: 18.0,
+                          fontSize: 14.0,
                         ),
                       ),
                       subtitle: Text(

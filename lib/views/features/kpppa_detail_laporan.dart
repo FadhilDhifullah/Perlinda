@@ -71,9 +71,7 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
             buildDetailItem(context, 'Tanggal Kejadian', formattedDate),
             if (location != null)
               buildLocationDetailItem('Lokasi Kejadian', location),
-            buildDetailItem(context, 'Lampiran',
-                report['attachmentUrl'] ?? 'No attachment available',
-                isFile: true),
+            buildAttachmentItem(report['attachmentUrl']),
             buildStatusDropdown(),
             SizedBox(height: 20.0),
             Center(
@@ -270,6 +268,51 @@ class _KPPPADetailLaporanState extends State<KPPPADetailLaporan> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildAttachmentItem(String? attachmentUrl) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Lampiran',
+            style: TextStyle(
+              color: Color(0xFF00355C),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.0),
+          if (attachmentUrl != null && attachmentUrl.isNotEmpty)
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Color(0xFFC1D9F1),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Image.network(
+                attachmentUrl,
+                fit: BoxFit.cover,
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Color(0xFFC1D9F1),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                'No attachment available',
+                style: TextStyle(color: Color(0xFF00355C)),
+              ),
+            ),
         ],
       ),
     );

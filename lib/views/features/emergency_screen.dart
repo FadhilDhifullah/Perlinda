@@ -39,7 +39,7 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.local_police,
               label: 'Polisi',
               onPressed: () {
-                _makePhoneCall('0859191735426');
+                _makePhoneCall('0331484285');
               },
             ),
             SizedBox(height: 30),
@@ -47,7 +47,7 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.local_hospital,
               label: 'Medis/Ambulans',
               onPressed: () {
-                _makePhoneCall('112');
+                _makePhoneCall('0331422701');
               },
             ),
             SizedBox(height: 30),
@@ -55,7 +55,7 @@ class EmergencyScreen extends StatelessWidget {
               icon: Icons.person,
               label: 'SAPA/Kemen PPPA',
               onPressed: () {
-                _makePhoneCall('123');
+                _makePhoneCall('129');
               },
             ),
           ],

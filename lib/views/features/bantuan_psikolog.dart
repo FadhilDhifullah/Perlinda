@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_perlinda/services/chat_service.dart';
 import 'package:flutter_perlinda/views/features/detail_psikolog.dart';
@@ -66,7 +65,9 @@ class _BantuanPsikologPageState extends State<BantuanPsikologPage> {
               color: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('psikolog').snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('psikolog')
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -78,18 +79,23 @@ class _BantuanPsikologPageState extends State<BantuanPsikologPage> {
                   final psikologDocs = snapshot.data!.docs;
                   final filteredDocs = psikologDocs.where((doc) {
                     var data = doc.data() as Map<String, dynamic>;
-                    return data['full_name'].toLowerCase().contains(_searchQuery);
+                    return data['full_name']
+                        .toLowerCase()
+                        .contains(_searchQuery);
                   }).toList();
 
                   return ListView.builder(
                     itemCount: filteredDocs.length,
                     itemBuilder: (context, index) {
-                      var psikolog = filteredDocs[index].data() as Map<String, dynamic>;
+                      var psikolog =
+                          filteredDocs[index].data() as Map<String, dynamic>;
                       return PsychologistCard(
                         docId: filteredDocs[index].id,
-                        imagePath: psikolog['image'] ?? 'images/default_avatar.png',
+                        imagePath:
+                            psikolog['image'] ?? 'images/default_avatar.png',
                         name: psikolog['full_name'] ?? 'Nama tidak tersedia',
-                        phoneNumber: psikolog['whatsapp'] ?? 'Nomor tidak tersedia',
+                        phoneNumber:
+                            psikolog['whatsapp'] ?? 'Nomor tidak tersedia',
                       );
                     },
                   );
