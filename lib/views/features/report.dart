@@ -330,7 +330,7 @@ class _BuatLaporanState extends State<BuatLaporan> {
                 ),
                 child: Text(
                   "Kirim Laporan",
-                  style: TextStyle(fontSize: 18.0),
+                  style: TextStyle(fontSize: 18.0, color: Colors.white),
                 ),
               ),
             ),
